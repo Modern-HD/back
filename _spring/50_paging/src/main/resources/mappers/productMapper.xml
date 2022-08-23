@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myweb.www.repository.ProductDAO">
+    <sql id="search">
+        <if test="type != null">
+            <trim prefix="and (" suffix=")" prefixOverrides="OR">
+                <foreach collection="typeToArray" item="type">
+                <trim prefix="OR">
+                    <choose>
+                        <when test="type == 't'.toString()">
+                            pname like concat('%', #{kw}, '%')
+                        </when>
+                        <when test="type == 'w'.toString()">
+                            writer like concat('%', #{kw}, '%')
+                        </when>
+                        <when test="type == 'c'.toString()">
+                            description like concat('%', #{kw}, '%')
+                        </when>
+                    </choose>
+                </trim>
+                </foreach>
+            </trim>
+        </if>
+    </sql>
+    <insert id="insert" parameterType="pvo">
+        insert into product(pname, category, price, writer, description, made_by)
+        values(#{pname}, #{category}, #{price}, #{writer}, #{description}, #{madeBy})
+    </insert>
+    <select id="selectList" parameterType="pgvo" resultType="pvo">
+        select a.pno, pname, price, writer, made_by, reg_at, mod_at 
+        from (
+            select pno from product where pno > 0
+            <include refid="search"/>
+            order by pno desc
+            limit #{pageStart}, #{qty}
+        ) a left join product b
+        on a.pno = b.pno
+    </select>
+    <select id="selectOne" parameterType="long" resultType="pvo">
+        select * from product where pno = #{pno}
+    </select>
+    <select id="selectTotalCount" resultType="int" parameterType="pgvo">
+        select count(pno) from product where pno > 0
+        <include refid="search"/>
+    </select>
+    <update id="update" parameterType="pvo">
+        update product set category = #{category}, pname = #{pname}, price = #{price},
+        description = #{description}, made_by = #{madeBy}, mod_at = now() where pno = #{pno}
+    </update>
+    <delete id="delete" parameterType="long">
+        delete from product where pno = #{pno}
+    </delete>
+</mapper>
