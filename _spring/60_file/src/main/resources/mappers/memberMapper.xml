@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.myweb.www.repository.MemberDAO">
+	<sql id="wh_email">
+		where email = #{email}
+	</sql>
+	<sql id="search">
+        <if test="type != null">
+            <trim prefix="and (" suffix=")">
+                <if test="type == 'e'.toString()">
+                    email like concat ('%', #{kw}, '%')
+                </if>
+                <if test="type == 'n'.toString()">
+                    nick_name like concat ('%', #{kw}, '%')
+                </if>
+                <if test="type == 'g'.toString()">
+                    grade = Cast(#{kw} AS SIGNED)
+                </if>
+                <if test="type == 'en'.toString()">
+                    email like concat ('%', #{kw}, '%')
+                    or nick_name like concat ('%', #{kw}, '%')
+                </if>
+            </trim>
+        </if>
+	</sql>
+	<insert id="insert" parameterType="mvo">
+		insert into member(email, pwd, nick_name)
+		values (#{email}, #{pwd}, #{nickName})
+	</insert>
+	<select id="selectLogin" parameterType="mvo" resultType="mvo">
+		select email, nick_name, last_login, grade
+		from member
+		<include refid="wh_email"/> and pwd = #{pwd}
+	</select>
+	<select id="selectList" parameterType="pgvo" resultType="mvo">
+        select m.email, nick_name, reg_at, last_login, grade
+        from (select email from member where 1 = 1 
+        <include refid="search"/>
+        order by reg_at desc limit #{pageStart}, #{qty}) m
+        left join member b on m.email = b.email;
+	</select>
+	<select id="selectDetail" parameterType="String" resultType="mvo">
+		select * from member
+		where email = #{email}
+	</select>
+	<select id="selectEmail" parameterType="String" resultType="int">
+	   select count(email) from member <include refid="wh_email"/>
+	</select>
+	<select id="selectTotalCount" resultType="int" parameterType="pgvo">
+	   select count(email) from member where 1=1
+	   <include refid="search"/>
+	</select>
+	<update id="update" parameterType="mvo">
+		update member set grade = #{grade}, nick_name = #{nickName}, pwd = #{pwd}
+		<include refid="wh_email"/>
+	</update>
+	<delete id="delete" parameterType="String">
+		delete from member <include refid="wh_email"/>
+	</delete>
+</mapper>
